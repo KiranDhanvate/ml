@@ -25,6 +25,21 @@ df.dropna(inplace=True)
 df
 
 
+# (ii) identify the outliers
+# Detecting outliers using the IQR method
+Q1 = df[['fare_amount', 'pickup_longitude', 'pickup_latitude','dropoff_longitude', 'dropoff_latitude', 'passenger_count']].quantile(0.25)
+Q3 = df[['fare_amount', 'pickup_longitude', 'pickup_latitude','dropoff_longitude', 'dropoff_latitude', 'passenger_count']].quantile(0.75)
+IQR = Q3 - Q1
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+lower_bound
+IQR
+upper_bound
+
+
+
+
 df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'], errors='coerce')
 
 # Extract useful time-based features
