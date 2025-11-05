@@ -1,0 +1,125 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score, mean_squared_error
+
+
+
+# Load dataset
+df = pd.read_csv(r"C:\Users\KIRAN\Downloads\uber.csv\uber.csv")
+
+# Display first few rows
+print(df.head())
+print("\nShape:", df.shape)
+print("\nMissing Values:\n", df.isnull().sum())
+
+
+
+df.dropna(inplace=True)
+df
+
+
+df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'], errors='coerce')
+
+# Extract useful time-based features
+df['hour'] = df['pickup_datetime'].dt.hour
+df['day'] = df['pickup_datetime'].dt.day
+df['month'] = df['pickup_datetime'].dt.month
+df['day_of_week'] = df['pickup_datetime'].dt.dayofweek
+
+df
+
+
+
+from math import radians, sin, cos, sqrt, atan2
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371  # Earth radius in km
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat/2)**2 + cos(radians(lat1))*cos(radians(lat2))*sin(dlon/2)**2
+    return 2 * R * atan2(sqrt(a), sqrt(1-a))
+
+df['distance_km'] = df.apply(lambda row: haversine(
+    row['pickup_latitude'], row['pickup_longitude'],
+    row['dropoff_latitude'], row['dropoff_longitude']
+), axis=1)
+
+
+plt.figure(figsize=(8,4))
+sns.boxplot(x=df['fare_amount'])
+plt.title("Fare Amount Outlier Detection")
+plt.show()
+
+
+df = df[(df['fare_amount'] > 0) & (df['fare_amount'] < 200)]
+df = df[(df['distance_km'] > 0) & (df['distance_km'] < 100)]
+
+
+corr = df[['fare_amount', 'distance_km', 'hour', 'day', 'month']].corr()
+plt.figure(figsize=(6,5))
+sns.heatmap(corr, annot=True, cmap='coolwarm')
+plt.title('Correlation Heatmap')
+plt.show()
+
+
+X = df[['distance_km', 'hour', 'day_of_week', 'month']]
+y = df['fare_amount']
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+
+lr = LinearRegression()
+lr.fit(X_train_scaled, y_train)
+
+y_pred_lr = lr.predict(X_test_scaled)
+
+
+
+rf = RandomForestRegressor(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+y_pred_rf = rf.predict(X_test)
+
+
+
+results = pd.DataFrame({
+    'Model': ['Linear Regression', 'Random Forest'],
+    'R² Score': [r2_lr, r2_rf],
+    'RMSE': [rmse_lr, rmse_rf]
+})
+
+print("\n===== Model Comparison =====\n")
+print(results)
+
+# Bar plot
+results.set_index('Model').plot(kind='bar', figsize=(7,5), colormap='viridis')
+plt.title('Model Performance Comparison')
+plt.ylabel('Score')
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.show()
+
+
+
+def evaluate_model(y_true, y_pred, model_name):
+    r2 = r2_score(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    print(f"\n===== {model_name} =====")
+    print(f"R² Score: {r2:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    return r2, rmse
+
+r2_lr, rmse_lr = evaluate_model(y_test, y_pred_lr, "Linear Regression")
+r2_rf, rmse_rf = evaluate_model(y_test, y_pred_rf, "Random Forest Regressor")
