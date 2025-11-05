@@ -1,0 +1,109 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+
+
+
+
+# Load dataset
+df = pd.read_csv(r"C:\Users\KIRAN\Downloads\Churn_Modelling.csv")
+print(df.head())
+print("\nShape:", df.shape)
+print("\nMissing values:\n", df.isnull().sum())
+
+
+# Drop irrelevant columns like RowNumber, CustomerId, Surname
+X = df.drop(['RowNumber', 'CustomerId', 'Surname', 'Exited'], axis=1)
+y = df['Exited']   # Target column: 1 = customer left, 0 = stayed
+
+
+# One-hot encode categorical features
+X = pd.get_dummies(X, drop_first=True)
+print(X.head())
+
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+
+  
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+  
+
+model = Sequential([
+    Dense(16, input_dim=X_train_scaled.shape[1], activation='relu'),
+    Dense(8, activation='relu'),
+    Dense(1, activation='sigmoid')  # Binary output
+])
+
+# Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Train the model
+history = model.fit(X_train_scaled, y_train, validation_split=0.2, epochs=50, batch_size=32, verbose=1)
+
+
+
+
+# Predict on test data
+y_pred_prob = model.predict(X_test_scaled)
+y_pred = (y_pred_prob > 0.5).astype(int)
+
+# Accuracy
+acc = accuracy_score(y_test, y_pred)
+cm = confusion_matrix(y_test, y_pred)
+
+print(f"\nTest Accuracy: {acc:.4f}")
+print("\nConfusion Matrix:\n", cm)
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+
+
+
+plt.figure(figsize=(8,5))
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Model Accuracy over Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+
+
+# Improved Neural Network
+model_improved = Sequential([
+    Dense(32, input_dim=X_train_scaled.shape[1], activation='relu'),
+    Dropout(0.3),  # Prevent overfitting
+    Dense(16, activation='relu'),
+    Dropout(0.3),
+    Dense(8, activation='relu'),
+    Dense(1, activation='sigmoid')
+])
+
+model_improved.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Retrain
+history2 = model_improved.fit(X_train_scaled, y_train, validation_split=0.2, epochs=50, batch_size=32, verbose=1)
+
+# Evaluate again
+y_pred2 = (model_improved.predict(X_test_scaled) > 0.5).astype(int)
+acc2 = accuracy_score(y_test, y_pred2)
+cm2 = confusion_matrix(y_test, y_pred2)
+
+print(f"\nImproved Model Accuracy: {acc2:.4f}")
+print("\nConfusion Matrix:\n", cm2)
