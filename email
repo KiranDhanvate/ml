@@ -1,0 +1,84 @@
+# Classify the email using the binary classification method. 
+# Email Spam detection has two states: 
+# a) Normal State – Not Spam, 
+# b) Abnormal State – Spam. 
+# Use K-Nearest Neighbors and Support
+# Vector Machine for classification. Analyze their performance.
+
+
+# Classify the email using the binary classification method. 
+# Email Spam detection has two states: 
+# a) Normal State – Not Spam, 
+# b) Abnormal State – Spam. 
+# Use K-Nearest Neighbors and Support
+# Vector Machine for classification. Analyze their performance.
+
+
+# solution 
+
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report
+
+# 1. Load dataset
+df = pd.read_csv("/home/student/emails.csv")   # adjust path if needed
+df
+
+# 2. Features & labels
+X = df.drop(columns=['Email No.', 'Prediction'])  # drop ID + target
+y = df['Prediction']   # target column
+
+# Convert features to NumPy (important for KNN)
+X = X.values
+y = y.values
+
+
+# 3. Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# 4. Train models
+knn = KNeighborsClassifier().fit(X_train, y_train)
+svm = SVC().fit(X_train, y_train)
+
+
+# 5. Evaluate
+print("KNN:\n", classification_report(y_test, knn.predict(X_test)))
+print("SVM:\n", classification_report(y_test, svm.predict(X_test)))
+
+# or
+
+# print("KNN Accuracy:", knn.score(X_test, y_test))   # we dont need to write from sklearn.metrics import classification_report
+# print("SVM Accuracy:", svm.score(X_test, y_test))
+
+# else 
+
+
+# conf_matrix = confusion_matrix(y_test, y_pred)
+# accuracy = accuracy_score(y_test, y_pred)
+# precision = precision_score(y_test, y_pred)
+# recall = recall_score(y_test, y_pred)
+# error_rate = 1 - accuracy
+
+# conf_matrix
+# accuracy
+# precision
+# recall
+# error_rate
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
