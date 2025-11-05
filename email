@@ -18,66 +18,125 @@
 
 
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, classification_report
 
-# 1. Load dataset
-df = pd.read_csv("/home/student/emails.csv")   # adjust path if needed
+
+
+# Load dataset (example: spam.csv)
+df = pd.read_csv(r"C:\Users\KIRAN\Downloads\emails.csv\emails.csv")   # adjust path if needed
 df
+
+# Inspect data
+print(df.head())
+print("\nShape:", df.shape)
+print("\nColumns:", df.columns)
+
+
+
+
+
 
 # 2. Features & labels
 X = df.drop(columns=['Email No.', 'Prediction'])  # drop ID + target
 y = df['Prediction']   # target column
+
+
+
 
 # Convert features to NumPy (important for KNN)
 X = X.values
 y = y.values
 
 
-# 3. Split data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-
-# 4. Train models
-knn = KNeighborsClassifier().fit(X_train, y_train)
-svm = SVC().fit(X_train, y_train)
+print(df.columns)
+df.head()
 
 
-# 5. Evaluate
-print("KNN:\n", classification_report(y_test, knn.predict(X_test)))
-print("SVM:\n", classification_report(y_test, svm.predict(X_test)))
-
-# or
-
-# print("KNN Accuracy:", knn.score(X_test, y_test))   # we dont need to write from sklearn.metrics import classification_report
-# print("SVM Accuracy:", svm.score(X_test, y_test))
-
-# else 
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
 
-# conf_matrix = confusion_matrix(y_test, y_pred)
-# accuracy = accuracy_score(y_test, y_pred)
-# precision = precision_score(y_test, y_pred)
-# recall = recall_score(y_test, y_pred)
-# error_rate = 1 - accuracy
-
-# conf_matrix
-# accuracy
-# precision
-# recall
-# error_rate
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train, y_train)
+y_pred_knn = knn.predict(X_test)
 
 
 
+svm = SVC(kernel='linear', C=1.0, random_state=42)
+svm.fit(X_train, y_train)
+y_pred_svm = svm.predict(X_test)
+
+
+
+def evaluate_model(y_test, y_pred, model_name):
+    cm = confusion_matrix(y_test, y_pred)
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred)
+    rec = recall_score(y_test, y_pred)
+
+    print(f"\n===== {model_name} Performance =====")
+    print("Confusion Matrix:\n", cm)
+    print(f"Accuracy:  {acc:.4f}")
+    print(f"Precision: {prec:.4f}")
+    print(f"Recall:    {rec:.4f}")
+    print("\nClassification Report:\n", classification_report(y_test, y_pred, target_names=['Not Spam', 'Spam']))
+
+# Evaluate both models
+evaluate_model(y_test, y_pred_knn, "K-Nearest Neighbors")
+evaluate_model(y_test, y_pred_svm, "Support Vector Machine")
 
 
 
 
+results = pd.DataFrame({
+    'Model': ['KNN', 'SVM'],
+    'Accuracy': [
+        accuracy_score(y_test, y_pred_knn),
+        accuracy_score(y_test, y_pred_svm)
+    ],
+    'Precision': [
+        precision_score(y_test, y_pred_knn),
+        precision_score(y_test, y_pred_svm)
+    ],
+    'Recall': [
+        recall_score(y_test, y_pred_knn),
+        recall_score(y_test, y_pred_svm)
+    ]
+})
+
+print("\n===== Model Comparison =====\n")
+print(results)
+
+# Bar Plot
+results.set_index('Model').plot(kind='bar', figsize=(7,5), colormap='viridis', legend=True)
+plt.title('KNN vs SVM Performance on Spam Detection')
+plt.ylabel('Score')
+plt.ylim(0,1)
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.show()
 
 
 
+from sklearn.metrics import accuracy_score, classification_report
 
+pred = knn.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, pred))
+print(classification_report(y_test, pred))
+
+
+pred = svm.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, pred))
+print(classification_report(y_test, pred))
 
 
 
